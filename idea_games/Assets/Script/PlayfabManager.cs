@@ -8,6 +8,7 @@ using System.Linq;
 public class PlayfabManager : MonoBehaviour
 {
     string idea1Name = "idea1";
+    public string idea1MyName = "";
     Dictionary<string, object> allPlayerData;
     [HideInInspector] public List<string> allPlayerValue = new List<string>();
 
@@ -63,6 +64,7 @@ public class PlayfabManager : MonoBehaviour
     {
         if (result.Data != null && result.Data.ContainsKey(idea1Name))
         {
+            idea1MyName = result.Data[idea1Name].Value;
             Debug.Log("idea1: " + result.Data[idea1Name].Value);
         }
     }
