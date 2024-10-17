@@ -21,7 +21,7 @@ public class OtherIdea : MonoBehaviour
             yield return null;
         }
 
-        yield return new WaitForSeconds(20.0f);
+        yield return new WaitForSeconds(10.0f);
 
         while (canvasGroup.alpha > 0)
         {
@@ -38,7 +38,7 @@ public class OtherIdea : MonoBehaviour
         int rand = Random.Range(0, PlayfabManager.instance.allPlayerValue.Count);
         transform.GetChild(0).GetComponent<TMP_Text>().text = PlayfabManager.instance.allPlayerValue[randomNum[rand]];
 
-        yield return new WaitForSeconds(5.0f);
+        yield return new WaitForSeconds(2.0f);
 
         StartCoroutine(AlphaTextAnimation());
     }

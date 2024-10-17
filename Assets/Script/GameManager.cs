@@ -45,12 +45,11 @@ public class GameManager : MonoBehaviour
             if (i == otherIdeaText.Length - 1 &&
                 !string.IsNullOrEmpty(PlayfabManager.instance.idea1MyName))
             {
-                StartCoroutine(SetIntervalActive(otherIdea[i], i * 5.0f));
+                StartCoroutine(SetIntervalActive(otherIdea[i], i * 3.0f));
                 otherIdeaText[i].text = PlayfabManager.instance.idea1MyName;
                 return;
             }
-
-            StartCoroutine(SetIntervalActive(otherIdea[i], i * 5.0f));
+            else StartCoroutine(SetIntervalActive(otherIdea[i], i * 3.0f));
 
             if (i > randomNum.Count - 1)
             {
