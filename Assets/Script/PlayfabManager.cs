@@ -34,7 +34,7 @@ public class PlayfabManager : MonoBehaviour
 
         var request = new LoginWithCustomIDRequest
         {
-            CustomId = SystemInfo.deviceUniqueIdentifier, // 端末のユニークIDでログイン
+            CustomId = UnityEngine.Random.Range(0, 34567896763452).ToString(),
             CreateAccount = true // アカウントがなければ作成する
         };
 
