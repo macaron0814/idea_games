@@ -17,6 +17,7 @@ public class PlayfabManager : MonoBehaviour
     public List<string> playerIds = new List<string>();
     public int playerCount;
     bool isSetOtherIdeaText;
+    bool isSendSuccess;
 
     // シングルトンインスタンス
     public static PlayfabManager instance;
@@ -50,7 +51,7 @@ public class PlayfabManager : MonoBehaviour
 
     private void Update()
     {
-        if(!isSetOtherIdeaText && playerIds.Count != 0)
+        if(!isSetOtherIdeaText && isSendSuccess && playerIds.Count != 0)
         {
             if(playerCount >= playerIds.Count)
             {
@@ -145,16 +146,17 @@ public class PlayfabManager : MonoBehaviour
                 PlayFabId = player.PlayerId,
                 Keys = null // 特定のキーを指定する場合はここに追加
             };
+            playerCount++;
 
             PlayFabClientAPI.GetUserData(request,
         result =>
         {
             // 成功時の処理
-            playerCount++;
             if (result.Data != null)
             {
                 foreach (var data in result.Data)
                 {
+                    isSendSuccess = true;
                     allPlayerValue.Add(data.Value.Value);
                     Debug.Log($"Player ID: {data.Key}, Title Data: {data.Value.Value}");
                 }
