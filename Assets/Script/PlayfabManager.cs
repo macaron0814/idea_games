@@ -37,6 +37,7 @@ public class PlayfabManager : MonoBehaviour
     void Start()
     {
         PlayFabSettings.staticSettings.TitleId = "572B2";
+        PlayFabSettings.DeveloperSecretKey = "336UAXM93W9FEGOP1YICRD67MFXZ8N8I3RRFS9DMNJ5WED8SAS";
 
         var request = new LoginWithCustomIDRequest
         {
