@@ -5,7 +5,6 @@ using TMPro;
 using PlayFab.ClientModels;
 using System.Linq;
 using PlayFab.AdminModels;
-using PlayFab.PfEditor.EditorModels;
 using System;
 
 public class PlayfabManager : MonoBehaviour
