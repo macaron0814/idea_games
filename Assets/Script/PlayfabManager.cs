@@ -4,6 +4,9 @@ using UnityEngine;
 using TMPro;
 using PlayFab.ClientModels;
 using System.Linq;
+using PlayFab.AdminModels;
+using PlayFab.PfEditor.EditorModels;
+using System;
 
 public class PlayfabManager : MonoBehaviour
 {
@@ -11,6 +14,10 @@ public class PlayfabManager : MonoBehaviour
     public string idea1MyName = "";
     Dictionary<string, object> allPlayerData;
     [HideInInspector] public List<string> allPlayerValue = new List<string>();
+
+    public List<string> playerIds = new List<string>();
+    public int playerCount;
+    bool isSetOtherIdeaText;
 
     // シングルトンインスタンス
     public static PlayfabManager instance;
@@ -41,13 +48,25 @@ public class PlayfabManager : MonoBehaviour
         PlayFabClientAPI.LoginWithCustomID(request, OnLoginSuccess, OnLoginFailure);
     }
 
-    void OnLoginSuccess(LoginResult result)
+    private void Update()
+    {
+        if(!isSetOtherIdeaText && playerIds.Count != 0)
+        {
+            if(playerCount >= playerIds.Count)
+            {
+                GameManager.instance.SetOtherIdeaText();
+                isSetOtherIdeaText = true;
+            }
+        }
+    }
+
+    void OnLoginSuccess(PlayFab.ClientModels.LoginResult result)
     {
         Debug.Log("PlayFab login successful!");
-        ExecuteCloudScript();
+        GetAllPlayers();
         LoadPlayerData();
     }
-    void OnLoginFailure(PlayFabError error)
+    void OnLoginFailure(PlayFab.PlayFabError error)
     {
         Debug.LogError("PlayFab login failed: " + error.GenerateErrorReport());
     }
@@ -57,10 +76,10 @@ public class PlayfabManager : MonoBehaviour
     /// </summary>
     private void LoadPlayerData()
     {
-        PlayFabClientAPI.GetUserData(new GetUserDataRequest(), OnDataReceived, OnDataReceiveError);
+        PlayFabClientAPI.GetUserData(new PlayFab.ClientModels.GetUserDataRequest(), OnDataReceived, OnDataReceiveError);
     }
 
-    void OnDataReceived(GetUserDataResult result)
+    void OnDataReceived(PlayFab.ClientModels.GetUserDataResult result)
     {
         if (result.Data != null && result.Data.ContainsKey(idea1Name))
         {
@@ -68,7 +87,7 @@ public class PlayfabManager : MonoBehaviour
             Debug.Log("idea1: " + result.Data[idea1Name].Value);
         }
     }
-    void OnDataReceiveError(PlayFabError error)
+    void OnDataReceiveError(PlayFab.PlayFabError error)
     {
         Debug.LogError("Failed to retrieve player data: " + error.GenerateErrorReport());
     }
@@ -83,7 +102,7 @@ public class PlayfabManager : MonoBehaviour
             { "idea1", idea },
         };
 
-        var request = new UpdateUserDataRequest
+        var request = new PlayFab.ClientModels.UpdateUserDataRequest
         {
             Data = data
         };
@@ -91,66 +110,82 @@ public class PlayfabManager : MonoBehaviour
         PlayFabClientAPI.UpdateUserData(request, OnDataSendSuccess, OnDataSendFailure);
     }
 
-    void OnDataSendSuccess(UpdateUserDataResult result)
+    void OnDataSendSuccess(PlayFab.ClientModels.UpdateUserDataResult result)
     {
         Debug.Log("Player data updated successfully!");
     }
-    void OnDataSendFailure(PlayFabError error)
+    void OnDataSendFailure(PlayFab.PlayFabError error)
     {
         Debug.LogError("Failed to update player data: " + error.GenerateErrorReport());
     }
 
-    private void ExecuteCloudScript()
+    public void GetAllPlayers()
     {
-        var request = new ExecuteCloudScriptRequest
+        var request = new GetPlayersInSegmentRequest
         {
-            FunctionName = "GetAllPlayersData", // CloudScriptの関数名
-            GeneratePlayStreamEvent = true
+            SegmentId = "9B4A91E43298B95" // SegmentsのID
         };
 
-        PlayFabClientAPI.ExecuteCloudScript(request, OnCloudScriptSuccess, OnCloudScriptFailure);
+        PlayFabAdminAPI.GetPlayersInSegment(request, OnGetPlayersSuccess, OnGetPlayersError);
     }
 
-    void OnCloudScriptSuccess(ExecuteCloudScriptResult result)
+    private void OnGetPlayersError(PlayFab.PlayFabError error)
     {
-        Debug.Log("CloudScript executed successfully!");
+        Debug.LogError("Error getting user data: " + error.GenerateErrorReport());
+    }
 
-        // CloudScriptのログを確認する
-        foreach (var log in result.Logs)
+    private void OnGetPlayersSuccess(GetPlayersInSegmentResult result)
+    {
+        foreach (var player in result.PlayerProfiles)
         {
-            Debug.Log("Log: " + log.Message);
-        }
+            playerIds.Add(player.PlayerId);
 
-        // CloudScript内でエラーが発生したかをチェック
-        if (result.Error != null)
-        {
-            Debug.LogError("CloudScript Error: " + result.Error.Message);
-        }
-
-        // FunctionResultがnullかどうかチェック
-        if (result.FunctionResult != null)
-        {
-            var jsonObject = result.FunctionResult as PlayFab.Json.JsonObject;
-
-            if (jsonObject == null) return;
-
-            allPlayerData = jsonObject.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-
-            foreach (var playerData in allPlayerData)
+            var request = new PlayFab.ClientModels.GetUserDataRequest
             {
-                allPlayerValue.Add(playerData.Value.ToString());
-                Debug.Log("Player ID: " + playerData.Key + ", idea1 Data: " + playerData.Value);
-            }
+                PlayFabId = player.PlayerId,
+                Keys = null // 特定のキーを指定する場合はここに追加
+            };
 
-            GameManager.instance.SetOtherIdeaText();
-        }
-        else
+            PlayFabClientAPI.GetUserData(request,
+        result =>
         {
-            Debug.LogError("FunctionResult is null.");
+            // 成功時の処理
+            playerCount++;
+            if (result.Data != null)
+            {
+                foreach (var data in result.Data)
+                {
+                    allPlayerValue.Add(data.Value.Value);
+                    Debug.Log($"Player ID: {data.Key}, Title Data: {data.Value.Value}");
+                }
+            }
+        },
+        error =>
+        {
+
+        });
         }
     }
-    void OnCloudScriptFailure(PlayFabError error)
+
+    // ユーザーアカウント削除のリクエスト
+    void DeletePlayerAccount(string playerId)
     {
-        Debug.LogError("Failed to execute CloudScript: " + error.GenerateErrorReport());
+        var request = new DeleteMasterPlayerAccountRequest
+        {
+            PlayFabId = playerId
+        };
+        PlayFabAdminAPI.DeleteMasterPlayerAccount(request, OnDeleteAccountSuccess, OnDeleteAccountError);
+    }
+
+    private void OnDeleteAccountSuccess(DeleteMasterPlayerAccountResult result)
+    {
+        Debug.Log("Player account deleted successfully.");
+    }
+
+
+    // エラー時のコールバック
+    private void OnDeleteAccountError(PlayFab.PlayFabError error)
+    {
+        Debug.LogError("Error deleting player account: " + error.ErrorMessage);
     }
 }
