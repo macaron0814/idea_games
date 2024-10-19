@@ -36,7 +36,7 @@ public class OtherIdea : MonoBehaviour
         }
         GameManager.instance.Shuffle<int>(randomNum);
         int rand = Random.Range(0, PlayfabManager.instance.allPlayerValue.Count);
-        transform.GetChild(0).GetComponent<TMP_Text>().text = PlayfabManager.instance.allPlayerValue[randomNum[rand]];
+        transform.GetChild(0).transform.GetComponent<TMP_Text>().text = PlayfabManager.instance.allPlayerValue[randomNum[rand]];
 
         yield return new WaitForSeconds(2.0f);
 
