@@ -137,26 +137,31 @@ public class PlayfabManager : MonoBehaviour
 
     private void OnGetPlayersSuccess(GetPlayersInSegmentResult result)
     {
+        StartCoroutine(GetUserDataRequest(result));
+    }
+
+    IEnumerator<WaitForSeconds> GetUserDataRequest(GetPlayersInSegmentResult result)
+    {
         foreach (var player in result.PlayerProfiles)
         {
             playerIds.Add(player.PlayerId);
 
-            var request = new PlayFab.ClientModels.GetUserDataRequest
+            var request = new PlayFab.ServerModels.GetUserDataRequest
             {
                 PlayFabId = player.PlayerId,
-                Keys = null // 特定のキーを指定する場合はここに追加
             };
             playerCount++;
 
-            PlayFabClientAPI.GetUserData(request,
+            yield return null;
+
+            PlayFabServerAPI.GetUserData(request,
         result =>
         {
             // 成功時の処理
-            if (result.Data != null)
+            if (result.Data != null && result.Data.ContainsKey(idea1Name))
             {
                 foreach (var data in result.Data)
                 {
-                    isSendSuccess = true;
                     allPlayerValue.Add(data.Value.Value);
                     Debug.Log($"Player ID: {data.Key}, Title Data: {data.Value.Value}");
                 }
@@ -167,6 +172,7 @@ public class PlayfabManager : MonoBehaviour
 
         });
         }
+        isSendSuccess = true;
     }
 
     // ユーザーアカウント削除のリクエスト
